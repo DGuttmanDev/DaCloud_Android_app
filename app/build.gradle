@@ -5,6 +5,9 @@ plugins {
 android {
     namespace 'es.pfc.dacloud'
     compileSdk 33
+    packagingOptions {
+        exclude 'META-INF/*.txt'
+    }
 
     defaultConfig {
         applicationId "es.pfc.dacloud"
@@ -26,12 +29,49 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    buildFeatures {
+        viewBinding true
+    }
 }
 
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.4.1'
     implementation 'com.google.android.material:material:1.5.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+
+    implementation('org.springframework:spring-web:5.3.10') {
+        exclude group: 'org.springframework', module: 'spring-core'
+        exclude group: 'org.springframework', module: 'spring-beans'
+        exclude group: 'org.springframework', module: 'spring-aop'
+        exclude group: 'org.springframework', module: 'spring-context'
+        exclude group: 'org.springframework', module: 'spring-expression'
+        exclude group: 'org.springframework', module: 'spring-jcl'
+        exclude group: 'org.springframework', module: 'spring-test'
+    }
+
+    implementation('org.springframework:spring-test:5.3.10') {
+        exclude group: 'org.springframework', module: 'spring-beans'
+        exclude group: 'org.springframework', module: 'spring-aop'
+        exclude group: 'org.springframework', module: 'spring-context'
+        exclude group: 'org.springframework', module: 'spring-expression'
+        exclude group: 'org.springframework', module: 'spring-jcl'
+        exclude group: 'org.springframework', module: 'spring-tx'
+        exclude group: 'org.springframework', module: 'spring-webmvc'
+        exclude group: 'org.springframework', module: 'spring-test'
+        exclude group: 'org.springframework', module: 'spring-test-context'
+    }
+
+    implementation 'com.google.code.gson:gson:2.8.9'
+
+    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
+
+    def nav_version = "2.4.1"
+    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
+    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
+
+    implementation 'androidx.navigation:navigation-fragment:2.5.2'
+    implementation 'androidx.navigation:navigation-ui:2.5.2'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
