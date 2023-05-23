@@ -17,7 +17,6 @@ public class UploadFileService {
 
     private List<File> listaFile;
     private List<MultipartFile> listaMultipartFile;
-    private String fileName;
     private Context context;
 
     public UploadFileService(File file, Context context){
@@ -27,19 +26,17 @@ public class UploadFileService {
         this.listaMultipartFile = new ArrayList<>();
     }
 
-    public void enviarArchivo() throws IOException {
+    public void enviarArchivo() {
 
         for (File file: listaFile){
-
             listaMultipartFile.add(crearMultipartFile(file));
-
         }
 
         try{
             UploadFileTask task = new UploadFileTask(listaMultipartFile, context);
             task.execute();
         } catch (Exception exception){
-
+            // FALTA ERROR
         }
 
     }

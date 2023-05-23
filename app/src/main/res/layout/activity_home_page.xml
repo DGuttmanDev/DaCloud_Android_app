@@ -8,6 +8,15 @@
     android:orientation="vertical"
     tools:context=".HomePageActivity">
 
+    <GridView
+        android:id="@+id/homeGrid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="5dp"
+        android:gravity="center" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addFileFab"
         android:layout_width="wrap_content"

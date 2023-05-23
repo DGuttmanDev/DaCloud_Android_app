@@ -20,4 +20,15 @@ public class ArchivoDTO {
     public void setNombreArchivo(String nombreArchivo) {
         this.nombreArchivo = nombreArchivo;
     }
+
+    @Override
+    public String toString() {
+        return "ArchivoDTO{" +
+                "idArchivo=" + idArchivo +
+                ", nombreArchivo='" + nombreArchivo + '\'' +
+                '}';
+    }
+
 }
+
+

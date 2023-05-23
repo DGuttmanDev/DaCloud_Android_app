@@ -2,7 +2,6 @@ package es.pfc.dacloud;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -18,6 +17,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.GridView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -28,27 +28,44 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import es.pfc.dacloud.business.adapter.home.PreviewAdapter;
+import es.pfc.dacloud.business.dto.ArchivoDTO;
+import es.pfc.dacloud.business.service.file.picker.FilePickerService;
 import es.pfc.dacloud.business.service.file.picker.FileUtils;
+import es.pfc.dacloud.business.service.file.preview.PreviewService;
+import es.pfc.dacloud.business.service.file.preview.PreviewTask;
 import es.pfc.dacloud.business.service.file.upload.UploadFileService;
 
 public class HomePageActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE_CODE = 1;
-    private static final int REQUEST_CODE  = 1;
+
     private UploadFileService uploadFileService;
     private File file;
     private File tempFile;
+    private FilePickerService filePickerService;
+    private PreviewService previewService;
     private SharedPreferences preferences;
+    private List<ArchivoDTO> listaArchivosDto;
 
+
+    // ELEMENTOS INTERFAZ
     private FloatingActionButton fab;
+    private GridView gridView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getSupportActionBar().setTitle("");
         setContentView(R.layout.activity_home_page);
+
         preferences = getSharedPreferences("AuthPreferences", MODE_PRIVATE);
+
+        filePickerService = new FilePickerService(this);
+
 
         fab = findViewById(R.id.addFileFab);
         fab.setOnClickListener(view -> {
@@ -61,10 +78,19 @@ public class HomePageActivity extends AppCompatActivity {
 
         });
 
+        gridView = findViewById(R.id.homeGrid);
+
+        try {
+            cargarPreview();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
-    private void showFilePickerDialog() {
+    public void showFilePickerDialog() {
         Intent data = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         data.setType("*/*");
         data = Intent.createChooser(data, "Selecciona un archivo");
@@ -101,12 +127,28 @@ public class HomePageActivity extends AppCompatActivity {
                     try {
                         uploadFileService = new UploadFileService(tempFile, this);
                         uploadFileService.enviarArchivo();
+                        obtenerListaPreview();
+                        gridView.setAdapter(new PreviewAdapter(this, listaArchivosDto));
+                        gridView.setNumColumns(2);
                     } catch (Exception exception) {
                         Toast.makeText(this, "Error al abrir el archivo", Toast.LENGTH_SHORT).show();
                     }
-                    Log.d("File", tempFile.getAbsolutePath());
                 }
             });
+
+    private void obtenerListaPreview() throws ExecutionException, InterruptedException {
+        previewService = new PreviewService(this);
+        listaArchivosDto = previewService.getPreview();
+        PreviewTask previewTask = new PreviewTask(this);
+        previewTask.execute();
+        boolean stauts = previewTask.get();
+    }
+
+    private void cargarPreview() throws ExecutionException, InterruptedException {
+        obtenerListaPreview();
+        gridView.setAdapter(new PreviewAdapter(this, listaArchivosDto));
+        gridView.setNumColumns(2);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -136,6 +178,8 @@ public class HomePageActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
 
 
 }
