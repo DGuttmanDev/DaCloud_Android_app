@@ -16,6 +16,7 @@
         android:layout_width="wrap_content"
         android:layout_height="35dp"
         android:layout_marginTop="20dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
@@ -28,8 +29,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#00FFFFFF"
-            app:srcCompat="@drawable/baseline_more_horiz_24"
-            android:contentDescription="Opciones" />
+            android:contentDescription="Opciones"
+            app:srcCompat="@drawable/baseline_more_horiz_24" />
 
 
     </LinearLayout>

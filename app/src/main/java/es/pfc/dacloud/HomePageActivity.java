@@ -128,7 +128,7 @@ public class HomePageActivity extends AppCompatActivity {
                         uploadFileService = new UploadFileService(tempFile, this);
                         uploadFileService.enviarArchivo();
                         obtenerListaPreview();
-                        gridView.setAdapter(new PreviewAdapter(this, listaArchivosDto));
+                        gridView.setAdapter(new PreviewAdapter(this, listaArchivosDto, gridView));
                         gridView.setNumColumns(2);
                     } catch (Exception exception) {
                         Toast.makeText(this, "Error al abrir el archivo", Toast.LENGTH_SHORT).show();
@@ -146,7 +146,7 @@ public class HomePageActivity extends AppCompatActivity {
 
     private void cargarPreview() throws ExecutionException, InterruptedException {
         obtenerListaPreview();
-        gridView.setAdapter(new PreviewAdapter(this, listaArchivosDto));
+        gridView.setAdapter(new PreviewAdapter(this, listaArchivosDto, gridView));
         gridView.setNumColumns(2);
     }
 
