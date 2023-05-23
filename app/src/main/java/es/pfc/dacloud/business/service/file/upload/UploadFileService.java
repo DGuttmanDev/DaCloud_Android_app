@@ -8,43 +8,39 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.OkHttpClient;
 
 public class UploadFileService {
 
-    private static final String API_URL = "http://192.168.0.19:8080/api/file/upload";
-    private static final int REQUEST_CODE = 100;
-    private OkHttpClient client;
-
-    private File file;
+    private List<File> listaFile;
+    private List<MultipartFile> listaMultipartFile;
     private String fileName;
     private Context context;
 
     public UploadFileService(File file, Context context){
-        this.file = file;
-        this.fileName = file.getName();
-        client = new OkHttpClient();
+        this.listaFile = new ArrayList<>();
+        listaFile.add(file);
         this.context = context;
+        this.listaMultipartFile = new ArrayList<>();
     }
 
     public void enviarArchivo() throws IOException {
 
-        Log.d("Entro", "Entro a enviar archivo");
+        for (File file: listaFile){
 
-        MultipartFile archivo = crearMultipartFile(file);
+            listaMultipartFile.add(crearMultipartFile(file));
 
-        Log.d("archivo", file.getPath());
+        }
 
-        /*
         try{
-            UploadFileTask task = new UploadFileTask(archivo, context);
+            UploadFileTask task = new UploadFileTask(listaMultipartFile, context);
             task.execute();
         } catch (Exception exception){
 
         }
-
-         */
 
     }
 

@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,17 +23,22 @@ import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import es.pfc.dacloud.business.service.file.picker.FileUtils;
 import es.pfc.dacloud.business.service.file.upload.UploadFileService;
 
 public class HomePageActivity extends AppCompatActivity {
 
+    private static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE_CODE = 1;
     private static final int REQUEST_CODE  = 1;
     private UploadFileService uploadFileService;
     private File file;
-
+    private File tempFile;
     private SharedPreferences preferences;
 
     private FloatingActionButton fab;
@@ -47,22 +53,17 @@ public class HomePageActivity extends AppCompatActivity {
         fab = findViewById(R.id.addFileFab);
         fab.setOnClickListener(view -> {
 
-            if (ContextCompat.checkSelfPermission(HomePageActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 showFilePickerDialog();
             } else {
-                requestStoragePermission();
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE_CODE);
             }
 
         });
+
+
     }
 
-    private void requestStoragePermission(){
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE);
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)){
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE);
-        }
-    }
     private void showFilePickerDialog() {
         Intent data = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         data.setType("*/*");
@@ -75,21 +76,35 @@ public class HomePageActivity extends AppCompatActivity {
                 if (result.getResultCode() == Activity.RESULT_OK) {
                     Intent data = result.getData();
                     Uri uri = data.getData();
-                    String path = FileUtils.getPath(this,uri);
-                    Log.d("Path", path);
+                    String path = FileUtils.getPath(this, uri);
                     try {
                         file = new File(path);
-                    } catch (Exception exception){
+                    } catch (Exception exception) {
                         Log.d("Error", "Error al abrir el archivo");
                     }
-                    uploadFileService = new UploadFileService(file, this);
                     try {
-                        file = new File(uri.getPath());
-                        uploadFileService = new UploadFileService(file, this);
+                        InputStream inputStream = getContentResolver().openInputStream(uri);
+                        File tempDir = getCacheDir();
+                        tempFile = new File(tempDir, file.getName());
+                        try (OutputStream outputStream = new FileOutputStream(tempFile)) {
+                            byte[] buffer = new byte[1024];
+                            int length;
+                            while ((length = inputStream.read(buffer)) != -1) {
+                                outputStream.write(buffer, 0, length);
+                            }
+                        }
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    try {
+                        uploadFileService = new UploadFileService(tempFile, this);
                         uploadFileService.enviarArchivo();
                     } catch (Exception exception) {
                         Toast.makeText(this, "Error al abrir el archivo", Toast.LENGTH_SHORT).show();
                     }
+                    Log.d("File", tempFile.getAbsolutePath());
                 }
             });
 
