@@ -1,12 +1,16 @@
 package es.pfc.dacloud.business.adapter.home;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.media.Image;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -21,6 +25,7 @@ import es.pfc.dacloud.business.dto.ArchivoDTO;
 import es.pfc.dacloud.business.service.file.delete.DeleteTask;
 import es.pfc.dacloud.business.service.file.preview.PreviewService;
 import es.pfc.dacloud.business.service.file.preview.PreviewTask;
+import es.pfc.dacloud.business.service.file.rename.RenameTask;
 import es.pfc.dacloud.business.service.file.upload.UploadFileService;
 
 public class PreviewAdapter extends BaseAdapter {
@@ -65,6 +70,7 @@ public class PreviewAdapter extends BaseAdapter {
         textView.setText(archivo.getNombreArchivo());
 
         Long id = archivo.getIdArchivo();
+        String nombre = getNameWithoutExtension(archivo.getNombreArchivo());
 
         ImageView imageView = convertView.findViewById(R.id.image_view);
 
@@ -89,7 +95,7 @@ public class PreviewAdapter extends BaseAdapter {
 
         ImageView opcionesButton = convertView.findViewById(R.id.opciones_button);
         opcionesButton.setOnClickListener(view -> {
-            showPopupMenu(opcionesButton, id);
+            showPopupMenu(opcionesButton, id, nombre, archivo.getNombreArchivo());
         });
 
         return convertView;
@@ -106,7 +112,17 @@ public class PreviewAdapter extends BaseAdapter {
 
     }
 
-    private void showPopupMenu(View anchor, Long id) {
+    private String getNameWithoutExtension(String fileName) {
+        int lastIndex = fileName.lastIndexOf(".");
+        if (lastIndex >= 0) {
+            return fileName.substring(0, lastIndex);
+        } else {
+            return fileName;
+        }
+    }
+
+
+    private void showPopupMenu(View anchor, Long id, String nombre, String nombreAntiguo) {
         PopupMenu popupMenu = new PopupMenu(context, anchor);
         popupMenu.inflate(R.menu.file_menu);
 
@@ -126,15 +142,60 @@ public class PreviewAdapter extends BaseAdapter {
                 }
                 return true;
             } else if (itemId == R.id.renombrar_archivo) {
-
+                showRenameDialog(id, nombre, nombreAntiguo);
                 return true;
             } else {
                 return false;
             }
         });
-
-        // Muestra el menú emergente
         popupMenu.show();
+    }
+
+    private void showRenameDialog(Long id, String nombre, String nombreAntiguo) {
+        // Inflar el diseño del diálogo personalizado
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View dialogView = inflater.inflate(R.layout.rename_layout, null);
+
+        // Obtener referencias a los elementos del diálogo
+        EditText editTextNewName = dialogView.findViewById(R.id.editTextNewName);
+        editTextNewName.setText(nombre);
+
+        // Crear el diálogo de alerta
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setView(dialogView);
+        builder.setTitle("Renombrar archivo");
+
+        // Configurar el botón Cancelar
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
+
+        // Configurar el botón Aplicar
+        builder.setPositiveButton("Aplicar", (dialog, which) -> {
+            String newName = editTextNewName.getText().toString().trim();
+            String extension = getExtension(nombreAntiguo);
+            String nuevoNombreCompleto = newName + "." + extension;
+            ArchivoDTO archivoDTO = new ArchivoDTO();
+            archivoDTO.setIdArchivo(id);
+            archivoDTO.setNombreArchivo(nuevoNombreCompleto);
+            actualizar(archivoDTO);
+            try {
+                obtenerListaPreview();
+                gridView.setAdapter(new PreviewAdapter(context, listaArchivosDto, gridView));
+                gridView.setNumColumns(2);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Mostrar el diálogo
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void actualizar(ArchivoDTO archivoDTO){
+        RenameTask renameTask = new RenameTask(archivoDTO, context);
+        renameTask.execute();
     }
 
     private void obtenerListaPreview() throws ExecutionException, InterruptedException {
