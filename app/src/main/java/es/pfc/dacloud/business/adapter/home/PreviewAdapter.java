@@ -2,14 +2,13 @@ package es.pfc.dacloud.business.adapter.home;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.media.Image;
+import android.media.MediaScannerConnection;
+import android.os.Environment;
+import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -17,16 +16,26 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import es.pfc.dacloud.HomePageActivity;
 import es.pfc.dacloud.R;
 import es.pfc.dacloud.business.dto.ArchivoDTO;
+import es.pfc.dacloud.business.service.file.RefreshGridService;
 import es.pfc.dacloud.business.service.file.delete.DeleteTask;
+import es.pfc.dacloud.business.service.file.preview.FolderPreviewService;
 import es.pfc.dacloud.business.service.file.preview.PreviewService;
 import es.pfc.dacloud.business.service.file.preview.PreviewTask;
 import es.pfc.dacloud.business.service.file.rename.RenameTask;
-import es.pfc.dacloud.business.service.file.upload.UploadFileService;
+import es.pfc.dacloud.business.task.DownloadFileTask;
 
 public class PreviewAdapter extends BaseAdapter {
     private Context context;
@@ -76,6 +85,18 @@ public class PreviewAdapter extends BaseAdapter {
 
         String extension = getExtension(archivo.getNombreArchivo()).toUpperCase();
 
+        if (archivo.isFolder()) {
+            extension = "FOLDER";
+            convertView.setOnClickListener(view -> {
+                try {
+                    accederDirectorio(archivo);
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
 
         switch (extension) {
             case "PNG", "JPG", "JPEG", "GIF", "HEIC":
@@ -87,6 +108,9 @@ public class PreviewAdapter extends BaseAdapter {
             case "EXE", "MSI", "MSP", "BAT", "CMD", "INF", "INS", "ISU", "JOB", "VB", "VBS", "PS1":
                 imageView.setImageResource(R.drawable.instalador_icon_purple);
                 break;
+            case "FOLDER":
+                imageView.setImageResource(R.drawable.folder_icon_purple);
+                break;
             default:
                 imageView.setImageResource(R.drawable.extension_desconocida_icon_purple);
                 break;
@@ -94,11 +118,26 @@ public class PreviewAdapter extends BaseAdapter {
         }
 
         ImageView opcionesButton = convertView.findViewById(R.id.opciones_button);
-        opcionesButton.setOnClickListener(view -> {
-            showPopupMenu(opcionesButton, id, nombre, archivo.getNombreArchivo());
-        });
+        if (archivo.isFolder()){
+            opcionesButton.setOnClickListener(view -> {
+                showPopupMenu(opcionesButton, id, nombre, archivo.getNombreArchivo());
+            });
+        } else {
+            opcionesButton.setOnClickListener(view -> {
+                showPopupMenuArchivo(opcionesButton, id, nombre, archivo.getNombreArchivo());
+            });
+        }
+
 
         return convertView;
+    }
+
+    private void accederDirectorio(ArchivoDTO archivo) throws ExecutionException, InterruptedException {
+        FolderPreviewService folderPreviewService = new FolderPreviewService(context, archivo.getIdArchivo());
+        List<ArchivoDTO> listaActualizada = folderPreviewService.getPreview();
+        RefreshGridService refreshGridService = new RefreshGridService();
+        refreshGridService.actualizarGrid(listaActualizada, gridView, context);
+        HomePageActivity.idDirectorio = archivo.getIdArchivo();
     }
 
     private String getExtension(String fileName) {
@@ -121,6 +160,63 @@ public class PreviewAdapter extends BaseAdapter {
         }
     }
 
+    private void showPopupMenuArchivo(View anchor, Long id, String nombre, String nombreAntiguo) {
+        PopupMenu popupMenu = new PopupMenu(context, anchor);
+        popupMenu.inflate(R.menu.file_menu_archivo);
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.eliminar_archivo) {
+                DeleteTask deleteTask = new DeleteTask(id, context);
+                deleteTask.execute();
+                try {
+                    obtenerListaPreview();
+                    gridView.setAdapter(new PreviewAdapter(context, listaArchivosDto, gridView));
+                    gridView.setNumColumns(2);
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return true;
+            } else if (itemId == R.id.renombrar_archivo) {
+                showRenameDialog(id, nombre, nombreAntiguo);
+                return true;
+            } else if (itemId == R.id.descargar_archivo){
+                DownloadFileTask downloadFileTask = new DownloadFileTask(context);
+                downloadFileTask.execute(id);
+                //saveMultipartFileToDownloads(context, multipartFile);
+                return false;
+            } else {
+                return false;
+            }
+        });
+        popupMenu.show();
+    }
+
+    public static void saveMultipartFileToDownloads(Context context, MultipartFile multipartFile) throws IOException {
+
+        byte[] bytes = multipartFile.getBytes();
+
+        // Obtén la carpeta de descargas del dispositivo
+        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+        // Crea un archivo con el nombre proporcionado en la carpeta de descargas
+        File file = new File(downloadsDir, multipartFile.getOriginalFilename());
+
+        // Crea un flujo de salida de archivo
+        FileOutputStream fos = new FileOutputStream(file);
+
+        // Escribe los bytes en el archivo
+        fos.write(bytes);
+
+        // Cierra el flujo de salida
+        fos.close();
+
+        // Escanea el archivo para que aparezca en la aplicación de descargas
+        MediaScannerConnection.scanFile(context, new String[]{file.getAbsolutePath()}, null, null);
+    }
+
 
     private void showPopupMenu(View anchor, Long id, String nombre, String nombreAntiguo) {
         PopupMenu popupMenu = new PopupMenu(context, anchor);
@@ -128,7 +224,7 @@ public class PreviewAdapter extends BaseAdapter {
 
         popupMenu.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.eliminar_archivo){
+            if (itemId == R.id.eliminar_archivo) {
                 DeleteTask deleteTask = new DeleteTask(id, context);
                 deleteTask.execute();
                 try {
@@ -177,10 +273,12 @@ public class PreviewAdapter extends BaseAdapter {
             archivoDTO.setIdArchivo(id);
             archivoDTO.setNombreArchivo(nuevoNombreCompleto);
             actualizar(archivoDTO);
+            FolderPreviewService folderPreviewService = new FolderPreviewService(context, HomePageActivity.getIdDirectorio());
+            List<ArchivoDTO> listaFolder = null;
             try {
-                obtenerListaPreview();
-                gridView.setAdapter(new PreviewAdapter(context, listaArchivosDto, gridView));
-                gridView.setNumColumns(2);
+                listaFolder = folderPreviewService.getPreview();
+                RefreshGridService refreshGridService = new RefreshGridService();
+                refreshGridService.actualizarGrid(listaFolder, gridView, context);
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
@@ -193,7 +291,7 @@ public class PreviewAdapter extends BaseAdapter {
         dialog.show();
     }
 
-    private void actualizar(ArchivoDTO archivoDTO){
+    private void actualizar(ArchivoDTO archivoDTO) {
         RenameTask renameTask = new RenameTask(archivoDTO, context);
         renameTask.execute();
     }

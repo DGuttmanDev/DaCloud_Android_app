@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/crear_directorio"
+        android:title="Nueva carpeta" />
+    <item
+        android:id="@+id/subir_archivo"
+        android:title="Subir archivo" />
+    <!-- Agrega más elementos de menú para las acciones adicionales que deseas mostrar -->
+</menu>

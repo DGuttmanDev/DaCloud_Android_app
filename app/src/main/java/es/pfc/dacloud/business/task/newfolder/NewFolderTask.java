@@ -1,4 +1,4 @@
-package es.pfc.dacloud.business.service.file.upload;
+package es.pfc.dacloud.business.task.newfolder;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.google.gson.Gson;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -14,7 +16,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import es.pfc.dacloud.business.config.ConfigUtil;
+import es.pfc.dacloud.business.dto.ArchivoDTO;
+import es.pfc.dacloud.business.dto.NewFolderDTO;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -22,16 +25,16 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class UploadFileTask extends AsyncTask<File, Void, Boolean> {
-    private static final String API_URL = ConfigUtil.URL+"/file/upload";
-    private List<MultipartFile> listaMultipartFile;
+public class NewFolderTask extends AsyncTask<File, Void, Boolean> {
+    private static final String API_URL = "http://192.168.0.19:8080/api/file/new/folder";
+    private NewFolderDTO newFolderDTO;
+    private Context context;
     private SharedPreferences preferences;
-    private Long idDirectorioPadre;
 
-    public UploadFileTask(List<MultipartFile> listaMultipartFile, Context context, Long idDirectorioPadre) {
-        this.listaMultipartFile = listaMultipartFile;
+    public NewFolderTask(NewFolderDTO newFolderDTO, Context context) {
+        this.newFolderDTO = newFolderDTO;
+        this.context = context;
         preferences = context.getSharedPreferences("AuthPreferences", MODE_PRIVATE);
-        this.idDirectorioPadre = idDirectorioPadre;
     }
 
     @Override
@@ -48,21 +51,17 @@ public class UploadFileTask extends AsyncTask<File, Void, Boolean> {
                     .writeTimeout(30, TimeUnit.SECONDS)
                     .build();
 
-            MultipartBody.Builder multipartBuilder = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("dir_id", idDirectorioPadre.toString());
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-            for (MultipartFile file : listaMultipartFile) {
-                MediaType MEDIA_TYPE = MediaType.parse(file.getContentType());
-                RequestBody requestBody = RequestBody.create(file.getBytes(), MEDIA_TYPE);
-                MultipartBody.Part filePart = MultipartBody.Part.createFormData("files", file.getOriginalFilename(), requestBody);
-                multipartBuilder.addPart(filePart);
-            }
+            Gson gson = new Gson();
+            String jsonBody = gson.toJson(newFolderDTO);
+
+            RequestBody requestBody = RequestBody.create(jsonBody, JSON);
 
             Request request = new Request.Builder()
                     .url(API_URL)
                     .header("token", token)
-                    .post(multipartBuilder.build())
+                    .post(requestBody)
                     .build();
 
 // Enviar la solicitud al servidor

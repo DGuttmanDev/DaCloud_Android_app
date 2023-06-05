@@ -4,6 +4,7 @@ public class ArchivoDTO {
 
     private Long idArchivo;
     private String nombreArchivo;
+    private boolean folder;
 
     public Long getIdArchivo() {
         return idArchivo;
@@ -21,12 +22,12 @@ public class ArchivoDTO {
         this.nombreArchivo = nombreArchivo;
     }
 
-    @Override
-    public String toString() {
-        return "ArchivoDTO{" +
-                "idArchivo=" + idArchivo +
-                ", nombreArchivo='" + nombreArchivo + '\'' +
-                '}';
+    public boolean isFolder() {
+        return folder;
+    }
+
+    public void setFolder(boolean folder) {
+        this.folder = folder;
     }
 
 }
