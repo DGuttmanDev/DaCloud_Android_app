@@ -5,25 +5,27 @@ import android.util.Log;
 
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import okhttp3.OkHttpClient;
+import es.pfc.dacloud.HomePageActivity;
 
 public class UploadFileService {
 
     private List<File> listaFile;
     private List<MultipartFile> listaMultipartFile;
     private Context context;
+    private Long idDirectorioPadre;
 
     public UploadFileService(File file, Context context){
         this.listaFile = new ArrayList<>();
         listaFile.add(file);
         this.context = context;
         this.listaMultipartFile = new ArrayList<>();
+        idDirectorioPadre = HomePageActivity.getIdDirectorio();
     }
 
     public void enviarArchivo() {
@@ -33,7 +35,7 @@ public class UploadFileService {
         }
 
         try{
-            UploadFileTask task = new UploadFileTask(listaMultipartFile, context);
+            UploadFileTask task = new UploadFileTask(listaMultipartFile, context, idDirectorioPadre);
             task.execute();
         } catch (Exception exception){
             // FALTA ERROR
