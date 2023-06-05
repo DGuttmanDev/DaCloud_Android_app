@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="Preferencias">
+
+        <Preference
+            android:key="modificar_datos"
+            android:title="Modificar datos personales"
+            android:summary="Modifica tu nombre, apellidos y nick name" />
+
+        <Preference
+            android:key="seleccionar_suscripcion"
+            android:title="Seleccionar suscripción"
+            android:summary="Selecciona tu tipo de suscripción" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

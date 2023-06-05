@@ -78,12 +78,15 @@ public class LoginActivity extends AppCompatActivity {
         hilo.start();
         hilo.join();
 
-        if (preferences.contains("token")){
-            setResult(RESULT_OK);
-            this.finish();
+        if (LoginService.codigo == 401) {
+            Toast.makeText(this, "Credenciales incorrectas", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Error login", Toast.LENGTH_SHORT).show();
+            if (preferences.contains("token")){
+                setResult(RESULT_OK);
+                this.finish();
+            }
         }
+
     }
 
 }

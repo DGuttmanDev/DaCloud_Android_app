@@ -4,7 +4,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
@@ -21,9 +20,9 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,15 +38,11 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import es.pfc.dacloud.business.adapter.home.PreviewAdapter;
 import es.pfc.dacloud.business.dto.ArchivoDTO;
 import es.pfc.dacloud.business.dto.NewFolderDTO;
 import es.pfc.dacloud.business.service.file.RefreshGridService;
-import es.pfc.dacloud.business.service.file.picker.FilePickerService;
 import es.pfc.dacloud.business.service.file.picker.FileUtils;
 import es.pfc.dacloud.business.service.file.preview.FolderPreviewService;
-import es.pfc.dacloud.business.service.file.preview.PreviewService;
-import es.pfc.dacloud.business.service.file.preview.PreviewTask;
 import es.pfc.dacloud.business.service.file.upload.UploadFileService;
 import es.pfc.dacloud.business.task.GetNombreDirectorioPadreTask;
 import es.pfc.dacloud.business.task.newfolder.NewFolderTask;
@@ -72,7 +67,9 @@ public class HomePageActivity extends AppCompatActivity {
     private FloatingActionButton fab;
     private GridView gridView;
     private TextView nombre;
-    private Button homeButton;
+
+    private ImageButton homeButton;
+    private ImageButton refreshButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +108,8 @@ public class HomePageActivity extends AppCompatActivity {
                 }
             }
 
+            showPopupMenu(fab);
+
         });
 
         FolderPreviewService folderPreviewService = new FolderPreviewService(this, idDirectorio);
@@ -118,13 +117,43 @@ public class HomePageActivity extends AppCompatActivity {
         try {
             listaFolder = folderPreviewService.getPreview();
             RefreshGridService refreshGridService = new RefreshGridService();
-            refreshGridService.actualizarGrid(listaFolder, gridView, this);
+            refreshGridService.actualizarGrid(listaFolder, gridView, this, nombre);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
+        homeButton = findViewById(R.id.home_button);
+        homeButton.setOnClickListener(view -> {
+            idDirectorio = 0L;
+            FolderPreviewService folderPreviewService2 = new FolderPreviewService(this, idDirectorio);
+            try {
+                List<ArchivoDTO> listaFolder2 = folderPreviewService2.getPreview();
+                RefreshGridService refreshGridService = new RefreshGridService();
+                refreshGridService.actualizarGrid(listaFolder2, gridView, this, nombre);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+        });
+
+        refreshButton = findViewById(R.id.refresh_button);
+        refreshButton.setOnClickListener(view -> {
+            FolderPreviewService folderPreviewService2 = new FolderPreviewService(this, idDirectorio);
+            List<ArchivoDTO> listaFolder2 = null;
+            try {
+                listaFolder2 = folderPreviewService2.getPreview();
+                RefreshGridService refreshGridService = new RefreshGridService();
+                refreshGridService.actualizarGrid(listaFolder2, gridView, this, nombre);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
     }
 
@@ -263,7 +292,7 @@ public class HomePageActivity extends AppCompatActivity {
         FolderPreviewService folderPreviewService = new FolderPreviewService(this, idDirectorio);
         List<ArchivoDTO> listaFolder = folderPreviewService.getPreview();
         RefreshGridService refreshGridService = new RefreshGridService();
-        refreshGridService.actualizarGrid(listaFolder, gridView, this);
+        refreshGridService.actualizarGrid(listaFolder, gridView, this, nombre);
     }
 
     private void obtenerListaPreview() throws ExecutionException, InterruptedException {
@@ -277,7 +306,7 @@ public class HomePageActivity extends AppCompatActivity {
         obtenerListaPreview();
         if (listaArchivosDto != null || listaArchivosDto.size() > 0){
             RefreshGridService refreshGridService = new RefreshGridService();
-            refreshGridService.actualizarGrid(listaArchivosDto, gridView, this);
+            refreshGridService.actualizarGrid(listaArchivosDto, gridView, this, nombre);
         }
     }
 
@@ -291,11 +320,6 @@ public class HomePageActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
-            Toast.makeText(this, "Opciones", Toast.LENGTH_SHORT).show();
-            return true;
-        }
-
         if (id == R.id.action_logout) {
             SharedPreferences.Editor editor = preferences.edit();
             editor.remove("token");
@@ -305,6 +329,11 @@ public class HomePageActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
             return true;
+        }
+
+        if (id == R.id.action_preferencias) {
+            Intent intent = new Intent(this, ConfiguracionActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);

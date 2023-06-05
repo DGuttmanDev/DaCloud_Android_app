@@ -36,6 +36,7 @@ import es.pfc.dacloud.business.service.file.preview.PreviewService;
 import es.pfc.dacloud.business.service.file.preview.PreviewTask;
 import es.pfc.dacloud.business.service.file.rename.RenameTask;
 import es.pfc.dacloud.business.task.DownloadFileTask;
+import es.pfc.dacloud.business.task.GetNombreDirectorioPadreTask;
 
 public class PreviewAdapter extends BaseAdapter {
     private Context context;
@@ -46,10 +47,13 @@ public class PreviewAdapter extends BaseAdapter {
     private ArchivoDTO archivo;
     private GridView gridView;
 
-    public PreviewAdapter(Context context, List<ArchivoDTO> archivos, GridView gridView) {
+    private TextView textView;
+
+    public PreviewAdapter(Context context, List<ArchivoDTO> archivos, GridView gridView, TextView cabeceraDirectorio) {
         this.context = context;
         this.archivos = archivos;
         this.gridView = gridView;
+        this.textView = cabeceraDirectorio;
     }
 
     @Override
@@ -89,7 +93,7 @@ public class PreviewAdapter extends BaseAdapter {
             extension = "FOLDER";
             convertView.setOnClickListener(view -> {
                 try {
-                    accederDirectorio(archivo);
+                    accederDirectorio(archivo, id);
                 } catch (ExecutionException e) {
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
@@ -109,7 +113,7 @@ public class PreviewAdapter extends BaseAdapter {
                 imageView.setImageResource(R.drawable.instalador_icon_purple);
                 break;
             case "FOLDER":
-                imageView.setImageResource(R.drawable.folder_icon_purple);
+                imageView.setImageResource(R.drawable.icon_folder_purple_light);
                 break;
             default:
                 imageView.setImageResource(R.drawable.extension_desconocida_icon_purple);
@@ -132,12 +136,23 @@ public class PreviewAdapter extends BaseAdapter {
         return convertView;
     }
 
-    private void accederDirectorio(ArchivoDTO archivo) throws ExecutionException, InterruptedException {
+    private void accederDirectorio(ArchivoDTO archivo, Long id) throws ExecutionException, InterruptedException {
         FolderPreviewService folderPreviewService = new FolderPreviewService(context, archivo.getIdArchivo());
         List<ArchivoDTO> listaActualizada = folderPreviewService.getPreview();
         RefreshGridService refreshGridService = new RefreshGridService();
-        refreshGridService.actualizarGrid(listaActualizada, gridView, context);
+        refreshGridService.actualizarGrid(listaActualizada, gridView, context, textView);
         HomePageActivity.idDirectorio = archivo.getIdArchivo();
+        GetNombreDirectorioPadreTask getNombreDirectorioPadreTask = new GetNombreDirectorioPadreTask(context, id);
+        getNombreDirectorioPadreTask.execute();
+        String nombreDirectorio;
+        try {
+            getNombreDirectorioPadreTask.get(); // Esperar a que la tarea se complete
+            nombreDirectorio = getNombreDirectorioPadreTask.getNombreDirectorio();
+            textView.setText(nombreDirectorio);
+        } catch (Exception e) {
+            // Manejar excepciones
+        }
+
     }
 
     private String getExtension(String fileName) {
@@ -169,10 +184,11 @@ public class PreviewAdapter extends BaseAdapter {
             if (itemId == R.id.eliminar_archivo) {
                 DeleteTask deleteTask = new DeleteTask(id, context);
                 deleteTask.execute();
+                FolderPreviewService folderPreviewService2 = new FolderPreviewService(context, HomePageActivity.getIdDirectorio());
                 try {
-                    obtenerListaPreview();
-                    gridView.setAdapter(new PreviewAdapter(context, listaArchivosDto, gridView));
-                    gridView.setNumColumns(2);
+                    List<ArchivoDTO> listaFolder2 = folderPreviewService2.getPreview();
+                    RefreshGridService refreshGridService = new RefreshGridService();
+                    refreshGridService.actualizarGrid(listaFolder2, gridView, context, textView);
                 } catch (ExecutionException e) {
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
@@ -194,30 +210,6 @@ public class PreviewAdapter extends BaseAdapter {
         popupMenu.show();
     }
 
-    public static void saveMultipartFileToDownloads(Context context, MultipartFile multipartFile) throws IOException {
-
-        byte[] bytes = multipartFile.getBytes();
-
-        // Obtén la carpeta de descargas del dispositivo
-        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-        // Crea un archivo con el nombre proporcionado en la carpeta de descargas
-        File file = new File(downloadsDir, multipartFile.getOriginalFilename());
-
-        // Crea un flujo de salida de archivo
-        FileOutputStream fos = new FileOutputStream(file);
-
-        // Escribe los bytes en el archivo
-        fos.write(bytes);
-
-        // Cierra el flujo de salida
-        fos.close();
-
-        // Escanea el archivo para que aparezca en la aplicación de descargas
-        MediaScannerConnection.scanFile(context, new String[]{file.getAbsolutePath()}, null, null);
-    }
-
-
     private void showPopupMenu(View anchor, Long id, String nombre, String nombreAntiguo) {
         PopupMenu popupMenu = new PopupMenu(context, anchor);
         popupMenu.inflate(R.menu.file_menu);
@@ -227,10 +219,11 @@ public class PreviewAdapter extends BaseAdapter {
             if (itemId == R.id.eliminar_archivo) {
                 DeleteTask deleteTask = new DeleteTask(id, context);
                 deleteTask.execute();
+                FolderPreviewService folderPreviewService2 = new FolderPreviewService(context, HomePageActivity.getIdDirectorio());
                 try {
-                    obtenerListaPreview();
-                    gridView.setAdapter(new PreviewAdapter(context, listaArchivosDto, gridView));
-                    gridView.setNumColumns(2);
+                    List<ArchivoDTO> listaFolder2 = folderPreviewService2.getPreview();
+                    RefreshGridService refreshGridService = new RefreshGridService();
+                    refreshGridService.actualizarGrid(listaFolder2, gridView, context, textView);
                 } catch (ExecutionException e) {
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
@@ -278,7 +271,7 @@ public class PreviewAdapter extends BaseAdapter {
             try {
                 listaFolder = folderPreviewService.getPreview();
                 RefreshGridService refreshGridService = new RefreshGridService();
-                refreshGridService.actualizarGrid(listaFolder, gridView, context);
+                refreshGridService.actualizarGrid(listaFolder, gridView, context, textView);
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {

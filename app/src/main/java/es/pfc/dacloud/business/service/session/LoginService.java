@@ -10,6 +10,8 @@ import android.util.Log;
 import android.widget.Toast;
 import com.google.gson.Gson;
 import java.io.File;
+import java.io.IOException;
+
 import es.pfc.dacloud.business.dto.LoginDTO;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -23,6 +25,8 @@ public class LoginService implements Runnable {
     private LoginDTO loginDTO;
     private Context context;
     private Activity activity;
+
+    public static int codigo;
 
     public LoginService(LoginDTO loginDTO, Context context, Activity activity) {
         this.loginDTO = loginDTO;
@@ -42,10 +46,19 @@ public class LoginService implements Runnable {
                 .post(requestBody)
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        Response response = null;
+        try {
+            response = client.newCall(request).execute();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
             if (!response.isSuccessful()) {
                 throw new RuntimeException("Error en la petición: " + response);
             }
+
+            codigo = response.code();
 
             // Obtener el token JWT de la respuesta
             String token = response.body().string();
@@ -56,6 +69,7 @@ public class LoginService implements Runnable {
             editor.putString("token", token);
             editor.apply();
         } catch (Exception e) {
+            codigo = response.code();
             e.printStackTrace();
         }
     }
