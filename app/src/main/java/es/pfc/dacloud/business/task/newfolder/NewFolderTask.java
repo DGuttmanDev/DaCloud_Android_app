@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import es.pfc.dacloud.business.config.ConfigUtil;
 import es.pfc.dacloud.business.dto.ArchivoDTO;
 import es.pfc.dacloud.business.dto.NewFolderDTO;
 import okhttp3.MediaType;
@@ -26,7 +27,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class NewFolderTask extends AsyncTask<File, Void, Boolean> {
-    private static final String API_URL = "http://192.168.0.19:8080/api/file/new/folder";
+    private static final String API_URL = ConfigUtil.URL+"/file/new/folder";
     private NewFolderDTO newFolderDTO;
     private Context context;
     private SharedPreferences preferences;

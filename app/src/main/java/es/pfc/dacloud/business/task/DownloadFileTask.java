@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
+import es.pfc.dacloud.business.config.ConfigUtil;
 import es.pfc.dacloud.business.dto.ArchivoDTO;
 import es.pfc.dacloud.business.dto.DescargaDTO;
 import okhttp3.Call;
@@ -47,7 +48,7 @@ import okhttp3.ResponseBody;
 
 public class DownloadFileTask extends AsyncTask<Long, Void, DescargaDTO >{
 
-    private static final String API_URL = "http://192.168.0.19:8080/api/file/download/mobile";
+    private static final String API_URL = ConfigUtil.URL+"/file/download/mobile";
 
     private static final int REQUEST_CODE_OPEN_DIRECTORY = 1;
     private SharedPreferences preferences;
