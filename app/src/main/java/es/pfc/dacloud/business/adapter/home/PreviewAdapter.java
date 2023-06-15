@@ -93,6 +93,7 @@ public class PreviewAdapter extends BaseAdapter {
             extension = "FOLDER";
             convertView.setOnClickListener(view -> {
                 try {
+                    Log.d("datos", String.valueOf(id));
                     accederDirectorio(archivo, id);
                 } catch (ExecutionException e) {
                     throw new RuntimeException(e);
@@ -137,16 +138,16 @@ public class PreviewAdapter extends BaseAdapter {
     }
 
     private void accederDirectorio(ArchivoDTO archivo, Long id) throws ExecutionException, InterruptedException {
-        FolderPreviewService folderPreviewService = new FolderPreviewService(context, archivo.getIdArchivo());
+        FolderPreviewService folderPreviewService = new FolderPreviewService(context, id);
         List<ArchivoDTO> listaActualizada = folderPreviewService.getPreview();
         RefreshGridService refreshGridService = new RefreshGridService();
         refreshGridService.actualizarGrid(listaActualizada, gridView, context, textView);
-        HomePageActivity.idDirectorio = archivo.getIdArchivo();
+        HomePageActivity.idDirectorio = id;
         GetNombreDirectorioPadreTask getNombreDirectorioPadreTask = new GetNombreDirectorioPadreTask(context, id);
         getNombreDirectorioPadreTask.execute();
         String nombreDirectorio;
         try {
-            getNombreDirectorioPadreTask.get(); // Esperar a que la tarea se complete
+            getNombreDirectorioPadreTask.get();
             nombreDirectorio = getNombreDirectorioPadreTask.getNombreDirectorio();
             textView.setText(nombreDirectorio);
         } catch (Exception e) {

@@ -127,6 +127,7 @@ public class HomePageActivity extends AppCompatActivity {
         homeButton = findViewById(R.id.home_button);
         homeButton.setOnClickListener(view -> {
             idDirectorio = 0L;
+            nombre.setText("Directorio principal");
             FolderPreviewService folderPreviewService2 = new FolderPreviewService(this, idDirectorio);
             try {
                 List<ArchivoDTO> listaFolder2 = folderPreviewService2.getPreview();

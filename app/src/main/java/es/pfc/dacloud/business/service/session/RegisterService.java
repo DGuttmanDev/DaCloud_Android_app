@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 
 import java.io.File;
 
+import es.pfc.dacloud.business.config.ConfigUtil;
 import es.pfc.dacloud.business.dto.RegistroDTO;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -21,7 +22,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class RegisterService implements Runnable {
-    private static final String REGISTRO_URL = "HTTP://192.168.0.19:8080/api/session/register";
+    private static final String REGISTRO_URL = ConfigUtil.URL+"/session/register";
 
     private RegistroDTO registroDTO;
     private Context context;

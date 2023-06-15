@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 
+import es.pfc.dacloud.business.config.ConfigUtil;
 import es.pfc.dacloud.business.dto.LoginDTO;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -20,7 +21,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class LoginService implements Runnable {
-    private static final String LOGIN_URL = "HTTP://192.168.0.19:8080/api/session/login";
+    private static final String LOGIN_URL = ConfigUtil.URL+"/session/login";
 
     private LoginDTO loginDTO;
     private Context context;

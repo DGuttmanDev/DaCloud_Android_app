@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import es.pfc.dacloud.business.config.ConfigUtil;
 import es.pfc.dacloud.business.dto.ArchivoDTO;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -23,7 +24,7 @@ import okhttp3.Response;
 
 public class RenameTask extends AsyncTask<File, Void, Boolean> {
 
-    private static final String API_URL = "http://192.168.0.19:8080/api/file/rename";
+    private static final String API_URL = ConfigUtil.URL+"/file/rename";
     private Context context;
     private SharedPreferences preferences;
     private ArchivoDTO archivoDTO;
